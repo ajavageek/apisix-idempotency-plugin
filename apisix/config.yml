@@ -1,0 +1,14 @@
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+
+apisix:
+  extra_lua_path: /opt/?.lua
+
+plugins:
+  - idempotency                    # priority: 1500
+  
+plugin_attr:
+  idempotency:
+    host: redis

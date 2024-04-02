@@ -1,0 +1,13 @@
+services:
+  apisix:
+    image: apache/apisix:3.9.0-debian
+    volumes:
+      - ./apisix/config.yml:/usr/local/apisix/conf/config.yaml:ro
+      - ./apisix/apisix.yml:/usr/local/apisix/conf/apisix.yaml:ro
+      - ./plugin/src:/opt/apisix/plugins:ro
+    ports:
+      - "9080:9080"
+  redis:
+    image: redis/redis-stack:7.2.0-v9
+    ports:
+      - "8001:8001"
