@@ -94,6 +94,9 @@ function _M.access(conf, ctx)
         if hash ~= stored_hash then
             return core.response.exit(422, "This operation is idempotent and it requires correct usage of Idempotency Key. Idempotency Key MUST not be reused across different payloads of this operation.")
         end
+        if not data["response"] then
+            return core.response.exit(409, " request with the same Idempotency-Key for the same operation is being processed or is outstanding.")
+        end
         local response = core.json.decode(data["response"])
         local body = response["body"]
         local status_code = response["status"]
