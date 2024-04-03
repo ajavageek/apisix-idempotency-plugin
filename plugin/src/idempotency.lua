@@ -49,6 +49,17 @@ function _M.init()
     end
 end
 
+local function hash_request(request, ctx)
+    local request = {
+        method = core.request.get_method(),
+        uri = ctx.var.request_uri,
+        headers = core.request.headers(),
+        body = core.request.get_body()
+    }
+    local json = core.json.stably_encode(request)
+    return ngx.encode_base64(json)
+end
+
 function _M.access(conf, ctx)
     local idempotency_key = core.request.header(ctx, "Idempotency-Key")
     if not idempotency_key then
@@ -59,9 +70,10 @@ function _M.access(conf, ctx)
         core.log.error("Failed to get data in Redis: ", err)
         return
     end
+    local hash = hash_request(core.request, ctx)
     if resp == ngx.null then
         core.log.warn("No key found in Redis for Idempotency-Key, set it: ", idempotency_key)
-        local resp, err = red:json():set(idempotency_key, "$", '{ "request": true }')
+        local resp, err = red:json():set(idempotency_key, "$", '{ "request": "' .. hash .. '" }')
         if not resp then
             core.log.error("Failed to set data in Redis: ", err)
             return
@@ -69,6 +81,10 @@ function _M.access(conf, ctx)
     else
         core.log.warn("Found cached response for Idempotency key, returning it: ", idempotency_key)
         local data = cjson.decode(resp)
+        local stored_hash = data[1]["request"]
+        if hash ~= stored_hash then
+            core.response.exit(422, "This operation is idempotent and it requires correct usage of Idempotency Key. Idempotency Key MUST not be reused across different payloads of this operation.")
+        end
         local body = data[1]["response"]["body"]
         local status_code = data[1]["response"]["status"]
         local headers = data[1]["response"]["headers"]
