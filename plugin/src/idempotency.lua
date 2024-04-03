@@ -51,6 +51,9 @@ end
 
 function _M.access(conf, ctx)
     local idempotency_key = core.request.header(ctx, "Idempotency-Key")
+    if not idempotency_key then
+        core.response.exit(400, "This operation is idempotent and it requires correct usage of Idempotency Key")
+    end
     local resp, err = red:json():get(idempotency_key, "$")
     if not resp then
         core.log.error("Failed to get data in Redis: ", err)
