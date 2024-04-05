@@ -1,7 +1,8 @@
 routes:
   - uri: /*
     plugins:
-      idempotency: ~
+      idempotency:
+        redis: {}
     upstream:
       nodes:
         "httpbin.org:80": 1
